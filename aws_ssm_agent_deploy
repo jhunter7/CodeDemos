@@ -1,0 +1,35 @@
+- hosts: [base]
+  remote_user: ansible
+  become: yes
+  become_method: sudo
+  connection: ssh
+  tasks:
+  - name: copy ssl
+    copy: src=AmazonRootCA1.pem dest=/etc/pki/ca-trust/source/anchors/AmazonRootCA.pem
+    notify:
+    - updateca
+  - name: download and install rpm
+    yum:
+       name: https://s3.us-east-1.amazonaws.com/amazon-ssm-us-east-1/latest/linux_amd64/amazon-ssm-agent.rpm
+  - name: Check if node is registered
+    stat:
+      path: /var/lib/amazon/ssm/registration
+    register: stat_result
+  - name: Register managed instance
+    command: amazon-ssm-agent -register -clear -code '{{ activation_code }}' -id '{{ activation_id }}' -region "us-east-1" -y
+    notify: restartssmagent
+    when: stat_result.stat.exists == False
+  handlers:
+  - name: updateca
+    command: sudo update-ca-trust
+  - name: restartssmagent
+    service:
+      name: amazon-ssm-agent
+      state: restarted
+  vars_prompt:
+  - name: activation_code
+    prompt: "Enter the Activation Code"
+    private: no
+  - name: activation_id
+    prompt: "Enter the Activation ID"
+    private: no
