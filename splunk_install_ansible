@@ -1,0 +1,22 @@
+- name: check to see if we already have the installer downloaded
+  stat:
+    path: /tmp/splunkforwarder-6.6.0-1-x86_64.rpm
+  register: splunkrpm
+- name: copy splunk installer from Maven01
+  get_url:
+    url: http://maven01.ipacc.com:8081/nexus/content/repositories/infinity-resources/com/ipacc/rpm/splunkforwarder/6.6.0-1/splunkforwarder-6.6.0-1-x86_64.rpm
+    dest: /tmp/splunkforwarder-6.6.0-1-x86_64.rpm
+  when: splunkrpm.stat.exists == False
+- name: install splunk forwarder from RPM
+  yum:
+    name: /tmp/splunkforwarder-6.6.0-1-x86_64.rpm
+    state: present
+  when: splunkrpm.stat.exists == False
+  notify:
+   - enable splunk
+- name: setup deploymentclient.conf
+  template:
+    src: static_files/deploymentclient_test.conf
+    dest: /opt/splunkforwarder/etc/system/local/deploymentclient.conf
+  notify:
+    - restart splunk
