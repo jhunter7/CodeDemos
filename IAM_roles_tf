@@ -1,0 +1,50 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: Policy for svc-base-t0
+
+Resources:
+  Policy:
+    Type: AWS::IAM::Policy
+    Properties:
+      PolicyName: 'policy-svc-base-t0'
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+        - Effect: Allow
+          Action:
+          - ssm:DescribeAssociation
+          Resource: "*"
+        ## End of Policy Definition ##
+      Roles:
+      - Ref: InstanceRole
+
+  InstanceRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: "role-svc-base-t0"
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+        - Effect: Allow
+          Principal:
+            Service:
+            - ec2.amazonaws.com
+          Action:
+          - sts:AssumeRole
+      Path: "/"
+      ManagedPolicyArns:
+          - arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore
+          - arn:aws:iam::aws:policy/CloudWatchAgentServerPolicy
+        ## End of Managed Policies ##
+  InstanceProfile:
+    Type: AWS::IAM::InstanceProfile
+    Properties:
+      Path: "/"
+      InstanceProfileName: 'profile-svc-base-t0'
+      Roles:
+        - Ref: InstanceRole
+
+Outputs:
+  profile:
+    Value: !Ref InstanceProfile
+    Export:
+      Name: 'role-svc-base-t0'
