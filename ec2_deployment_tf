@@ -1,0 +1,216 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: Dynamic Template for npd-kapc-s5
+
+Parameters:
+  Account:
+    Type: String
+    Default: npd
+  Environment:
+    Type: String
+    Default: s5
+  Role:
+    Type: String
+    Default: app
+  Application:
+    Type: String
+    Default: kapc
+  ProductCode:
+    Type: String
+    Default: P576
+  AppOwner:
+    Type: String
+    Default: KemperAutoEnvironmentOwners@kemper.com
+  BackupProfile:
+    Type: String
+    Default: bronze
+  DataClassification:
+    Type: String
+    Default: None
+  DataSensitivity:
+    Type: String
+    Default: None
+  NetworkZone:
+    Type: String
+    Default: Private
+  Compliance:
+    Type: String
+    Default: None
+  GroupEntity:
+    Type: String
+    Default: Preferred
+  AddVolumeCreate:
+    Type: String
+    Default: false
+  RootVolumeSize:
+    Type: Number
+    Default: '25'
+  ELBNameapp:
+    Type: String
+    Default: KAPCAPPS5
+  ELBNameweb:
+    Type: String
+    Default: KAPCS5
+  LaunchPadVersion:
+    Type: String
+    Default: 2.5.1.0
+  Platform:
+    Type: String
+    Default: Tomcat
+  Os:
+    Type: String
+    Default: RHEL7
+
+Transform:
+  Name: 'AWS::Include'
+  Parameters:
+    Location: 's3://kemper-svc-prd-jenkins-us-east-1/cloudformation/common/vpc-mapping.yml'
+
+Resources:
+#ec2 resources
+  EC2Instanceapp0:
+    Type: AWS::EC2::Instance
+    Properties:
+      InstanceType: t3a.xlarge
+      InstanceInitiatedShutdownBehavior: stop
+      ImageId: !FindInMap [VPCMap, !Ref Account, linuxami]
+      UserData:
+        !Base64 |
+          #! /bin/bash -xe
+          hostnamectl set-hostname KATAE1KAPCTCS5A.npd.aws.kemperi.com
+      KeyName: !FindInMap [VPCMap, !Ref Account, keypair]
+      SubnetId: !FindInMap [VPCMap, !Ref Account, subnetone]
+      SecurityGroupIds:
+        - !FindInMap [VPCMap, !Ref Account, mgmtsecuritygroup]
+        - Fn::ImportValue: 
+            !Join ["-", ["sg", !Ref Account, !Ref Application, !Ref Environment, "ec2", "app"]]
+      BlockDeviceMappings:
+        - DeviceName: /dev/sda1
+          Ebs:
+            VolumeSize: !Ref RootVolumeSize
+            VolumeType: 'gp2'
+            DeleteOnTermination: True
+      Tags:
+        - Key: Name
+          Value: KATAE1KAPCTCS5A.npd.aws.kemperi.com
+        - Key: Account
+          Value: !Ref Account
+        - Key: Environment
+          Value: !Ref Environment
+        - Key: Role
+          Value: app
+        - Key: Application
+          Value: !Ref Application
+        - Key: ProductCode
+          Value: !Ref ProductCode
+        - Key: AppOwner
+          Value: !Ref AppOwner
+        - Key: BackupProfile
+          Value: !Ref BackupProfile
+        - Key: DataClassification
+          Value: !Ref DataClassification
+        - Key: DataSensitivity
+          Value: !Ref DataSensitivity
+        - Key: NetworkZone
+          Value: !Ref NetworkZone
+        - Key: Compliance
+          Value: !Ref Compliance
+        - Key: GroupEntity
+          Value: !Ref GroupEntity
+        - Key: LaunchPadVersion
+          Value: !Ref LaunchPadVersion
+        - Key: Platform
+          Value: !Ref Platform 
+        - Key: Os
+          Value: !Ref Os      
+  DNSARecordapp0:
+    Type: AWS::Route53::RecordSet
+    Properties:
+      HostedZoneName: !Join ['', [!Ref 'Account', ., 'aws.kemperi.com', .]]
+      Comment: DNS name for instance
+      Name: KATAE1KAPCTCS5A.npd.aws.kemperi.com
+      Type: A
+      TTL: '900'
+      ResourceRecords:
+      - !GetAtt EC2Instanceapp0.PrivateIp
+
+#ec2 resources
+  EC2Instanceapp1:
+    Type: AWS::EC2::Instance
+    Properties:
+      InstanceType: t3a.xlarge
+      InstanceInitiatedShutdownBehavior: stop
+      ImageId: !FindInMap [VPCMap, !Ref Account, linuxami]
+      UserData:
+        !Base64 |
+          #! /bin/bash -xe
+          hostnamectl set-hostname KATAE1KAPCTCS5B.npd.aws.kemperi.com
+      KeyName: !FindInMap [VPCMap, !Ref Account, keypair]
+      SubnetId: !FindInMap [VPCMap, !Ref Account, subnettwo]
+      SecurityGroupIds:
+        - !FindInMap [VPCMap, !Ref Account, mgmtsecuritygroup]
+        - Fn::ImportValue: 
+            !Join ["-", ["sg", !Ref Account, !Ref Application, !Ref Environment, "ec2", "app"]]
+      BlockDeviceMappings:
+        - DeviceName: /dev/sda1
+          Ebs:
+            VolumeSize: !Ref RootVolumeSize
+            VolumeType: 'gp2'
+            DeleteOnTermination: True
+      Tags:
+        - Key: Name
+          Value: KATAE1KAPCTCS5B.npd.aws.kemperi.com
+        - Key: Account
+          Value: !Ref Account
+        - Key: Environment
+          Value: !Ref Environment
+        - Key: Role
+          Value: app
+        - Key: Application
+          Value: !Ref Application
+        - Key: ProductCode
+          Value: !Ref ProductCode
+        - Key: AppOwner
+          Value: !Ref AppOwner
+        - Key: BackupProfile
+          Value: !Ref BackupProfile
+        - Key: DataClassification
+          Value: !Ref DataClassification
+        - Key: DataSensitivity
+          Value: !Ref DataSensitivity
+        - Key: NetworkZone
+          Value: !Ref NetworkZone
+        - Key: Compliance
+          Value: !Ref Compliance
+        - Key: GroupEntity
+          Value: !Ref GroupEntity
+        - Key: LaunchPadVersion
+          Value: !Ref LaunchPadVersion
+        - Key: Platform
+          Value: !Ref Platform 
+        - Key: Os
+          Value: !Ref Os      
+  DNSARecordapp1:
+    Type: AWS::Route53::RecordSet
+    Properties:
+      HostedZoneName: !Join ['', [!Ref 'Account', ., 'aws.kemperi.com', .]]
+      Comment: DNS name for instance
+      Name: KATAE1KAPCTCS5B.npd.aws.kemperi.com
+      Type: A
+      TTL: '900'
+      ResourceRecords:
+      - !GetAtt EC2Instanceapp1.PrivateIp
+
+#REPLACE
+
+# Outputs:
+#   EC2InstanceID:
+#     Description: Instance ID
+#     Value: !Ref EC2Instance
+#   DNSEndpoint:
+#     Description: Consumable Endpoint in Route53
+#     Value: !Ref DNSARecord
+#   Endpoint:
+#     Description: The endpoint URL of the instance created
+#     Value: !GetAtt [EC2Instance, PrivateDnsName]
+#   TargetGroupARN:
+#     Value: !Ref 'TargetGroup'
