@@ -16,7 +16,7 @@ Parameters:
 Transform:
   Name: 'AWS::Include'
   Parameters:
-    Location: 's3://kemper-svc-prd-jenkins-us-east-1/cloudformation/common/vpc-mapping.yml'
+    Location: 's3://svc-prd-jenkins-us-east-1/cloudformation/common/vpc-mapping.yml'
 
 Resources:
   #Security group for app servers
