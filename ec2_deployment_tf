@@ -19,7 +19,7 @@ Parameters:
     Default: P576
   AppOwner:
     Type: String
-    Default: KemperAutoEnvironmentOwners@kemper.com
+    Default: EnvironmentOwners@domain.com
   BackupProfile:
     Type: String
     Default: bronze
@@ -63,7 +63,7 @@ Parameters:
 Transform:
   Name: 'AWS::Include'
   Parameters:
-    Location: 's3://kemper-svc-prd-jenkins-us-east-1/cloudformation/common/vpc-mapping.yml'
+    Location: 's3://svc-prd-jenkins-us-east-1/cloudformation/common/vpc-mapping.yml'
 
 Resources:
 #ec2 resources
@@ -76,7 +76,7 @@ Resources:
       UserData:
         !Base64 |
           #! /bin/bash -xe
-          hostnamectl set-hostname KATAE1KAPCTCS5A.npd.aws.kemperi.com
+          hostnamectl set-hostname KATAE1KAPCTCS5A.npd.aws.com
       KeyName: !FindInMap [VPCMap, !Ref Account, keypair]
       SubnetId: !FindInMap [VPCMap, !Ref Account, subnetone]
       SecurityGroupIds:
@@ -91,7 +91,7 @@ Resources:
             DeleteOnTermination: True
       Tags:
         - Key: Name
-          Value: KATAE1KAPCTCS5A.npd.aws.kemperi.com
+          Value: KATAE1KAPCTCS5A.npd.aws.com
         - Key: Account
           Value: !Ref Account
         - Key: Environment
@@ -125,9 +125,9 @@ Resources:
   DNSARecordapp0:
     Type: AWS::Route53::RecordSet
     Properties:
-      HostedZoneName: !Join ['', [!Ref 'Account', ., 'aws.kemperi.com', .]]
+      HostedZoneName: !Join ['', [!Ref 'Account', ., 'aws.com', .]]
       Comment: DNS name for instance
-      Name: KATAE1KAPCTCS5A.npd.aws.kemperi.com
+      Name: KATAE1KAPCTCS5A.npd.aws.com
       Type: A
       TTL: '900'
       ResourceRecords:
@@ -143,7 +143,7 @@ Resources:
       UserData:
         !Base64 |
           #! /bin/bash -xe
-          hostnamectl set-hostname KATAE1KAPCTCS5B.npd.aws.kemperi.com
+          hostnamectl set-hostname KATAE1KAPCTCS5B.npd.aws.com
       KeyName: !FindInMap [VPCMap, !Ref Account, keypair]
       SubnetId: !FindInMap [VPCMap, !Ref Account, subnettwo]
       SecurityGroupIds:
@@ -158,7 +158,7 @@ Resources:
             DeleteOnTermination: True
       Tags:
         - Key: Name
-          Value: KATAE1KAPCTCS5B.npd.aws.kemperi.com
+          Value: KATAE1KAPCTCS5B.npd.aws.com
         - Key: Account
           Value: !Ref Account
         - Key: Environment
@@ -192,9 +192,9 @@ Resources:
   DNSARecordapp1:
     Type: AWS::Route53::RecordSet
     Properties:
-      HostedZoneName: !Join ['', [!Ref 'Account', ., 'aws.kemperi.com', .]]
+      HostedZoneName: !Join ['', [!Ref 'Account', ., 'aws.com', .]]
       Comment: DNS name for instance
-      Name: KATAE1KAPCTCS5B.npd.aws.kemperi.com
+      Name: KATAE1KAPCTCS5B.npd.aws.com
       Type: A
       TTL: '900'
       ResourceRecords:
