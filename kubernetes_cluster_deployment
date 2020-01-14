@@ -1,0 +1,166 @@
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ecm-cmis
+  namespace: t0-p8 # Changed by Kemper
+  labels:
+    app: cmis-cluster1
+  annotations:
+    deployment.kubernetes.io/revision: '1'
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: cmis-cluster1
+  template:
+    metadata:
+      labels:
+        app: cmis-cluster1
+    spec:
+      volumes:
+      - name: t0-cmis-cfgstore-pvc # Kemper
+        persistentVolumeClaim:
+          claimName: t0-cmis-cfgstore-pvc # Kemper
+      - name: t0-cmis-logstore-pvc
+        persistentVolumeClaim:
+          claimName: t0-cmis-logstore-pvc # Kemper
+      containers:
+      - name: ecm-cmis
+        image: kemper-docker.artifactory.kemperi.com/cmis:ga-304-cmis-if005 # Kemper
+        ports:
+        - name: http
+          containerPort: 9080
+          protocol: TCP
+        - name: https
+          containerPort: 9443
+          protocol: TCP
+        env:
+        - name: LICENSE
+          value: accept
+        - name: CMIS_VERSION
+          value: '1.1'
+        - name: CE_URL
+          value: http://ecm-cpe-svc:9080/wsi/FNCEWS40MTOM
+        - name: TZ
+          value: Etc/UTC
+        - name: JVM_HEAP_XMS
+          value: 512m
+        - name: JVM_HEAP_XMX
+          value: 1024m
+        - name: CMC_TIME_TO_LIVE
+          value: '3600000'
+        - name: CRC_TIME_TO_LIVE
+          value: '3600000'
+        - name: USER_CACHE_TIME_TO_LIVE
+          value: '28800000'
+        - name: CHECKOUT_COPYCONTENT
+          value: 'True'
+        - name: DEFAULTMAXITEMS
+          value: '25'
+        - name: CVL_CACHE
+          value: 'True'
+        - name: SECUREMETADATACACHE
+          value: 'False'
+        - name: FILTERHIDDENPROPERTIES
+          value: 'True'
+        - name: QUERYTIMELIMIT
+          value: '180'
+        - name: RESUMABLEQUERIESFORREST
+          value: 'True'
+        - name: ESCAPEUNSAFESTRINGCHARACTERS
+          value: 'False'
+        - name: MAXSOAPSIZE
+          value: '180'
+        - name: PRINTFULLSTACKTRACE
+          value: 'False'
+        - name: FOLDERFIRSTSEARCH
+          value: 'False'
+        - name: IGNOREROOTDOCUMENTS
+          value: 'False'
+        - name: SUPPORTINGTYPEMUTABILITY
+          value: 'False'
+        - name: MON_METRICS_WRITER_OPTION
+          value: '0'
+        - name: ECM_PRODUCT_TYPE
+          value: CMIS
+        - name: MON_METRICS_SERVICE_ENDPOINT
+          value: ecm-graphite-svc:2003
+        - name: MON_ECM_METRICS_COLLECT_INTERVAL
+          value: '60'
+        - name: MON_ECM_METRICS_FLUSH_INTERVAL
+          value: '60'
+        - name: MY_POD_NAME
+          valueFrom:
+            fieldRef:
+              apiVersion: v1
+              fieldPath: metadata.name
+        - name: MY_POD_NAMESPACE
+          valueFrom:
+            fieldRef:
+              apiVersion: v1
+              fieldPath: metadata.namespace
+        - name: MY_POD_IP
+          valueFrom:
+            fieldRef:
+              apiVersion: v1
+              fieldPath: status.podIP
+        resources:
+          limits:
+            cpu: '1'
+            memory: 512Mi
+          requests:
+            cpu: 500m
+            memory: 256Mi
+        volumeMounts:
+        - name: t0-cmis-cfgstore-pvc
+          mountPath: "/opt/ibm/wlp/usr/servers/defaultServer/configDropins/overrides"
+          subPath: cmis/configDropins/overrides
+        - name: t0-cmis-logstore-pvc
+          mountPath: "/opt/ibm/wlp/usr/servers/defaultServer/logs"
+          subPath: cmis/logs
+        livenessProbe:
+          tcpSocket:
+            port: 9080
+          initialDelaySeconds: 180
+          timeoutSeconds: 1
+          periodSeconds: 5
+          successThreshold: 1
+          failureThreshold: 3
+        readinessProbe:
+          tcpSocket:
+            port: 9080
+          initialDelaySeconds: 90
+          timeoutSeconds: 1
+          periodSeconds: 5
+          successThreshold: 1
+          failureThreshold: 3
+        terminationMessagePath: "/dev/termination-log"
+        terminationMessagePolicy: File
+        imagePullPolicy: IfNotPresent
+      restartPolicy: Always
+      terminationGracePeriodSeconds: 30
+      dnsPolicy: ClusterFirst
+      nodeSelector:
+        beta.kubernetes.io/arch: amd64
+      securityContext: {}
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 100
+            podAffinityTerm:
+              labelSelector:
+                matchExpressions:
+                - key: app
+                  operator: In
+                  values:
+                  - cmis-cluster1
+              topologyKey: kubernetes.io/hostname
+      schedulerName: default-scheduler
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 25%
+      maxSurge: 25%
+  revisionHistoryLimit: 2
+  progressDeadlineSeconds: 600
