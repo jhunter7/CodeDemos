@@ -1,50 +1,290 @@
 AWSTemplateFormatVersion: 2010-09-09
-Description: Policy for svc-base-t0
+Description: Dynamic Template for lab-uxjk-d0
+
+Parameters:
+  Account:
+    Type: String
+    Default: lab
+  Environment:
+    Type: String
+    Default: d0
+  Role:
+    Type: String
+    Default: app
+  Application:
+    Type: String
+    Default: uxjk
+  ProductCode:
+    Type: String
+    Default: P123
+  AppOwner:
+    Type: String
+    Default: jarred.hunter@kemper.com
+  BackupProfile:
+    Type: String
+    Default: bronze
+  DataClassification:
+    Type: String
+    Default: None
+  DataSensitivity:
+    Type: String
+    Default: None
+  NetworkZone:
+    Type: String
+    Default: Private
+  Compliance:
+    Type: String
+    Default: None
+  GroupEntity:
+    Type: String
+    Default: Preferred
+  AddVolumeCreate:
+    Type: String
+    Default: false
+  RootVolumeSize:
+    Type: Number
+    Default: '25'
+  ELBNameapp:
+    Type: String
+    Default: UXJKAPPD0
+  ELBNameweb:
+    Type: String
+    Default: UXJKD0
+  LaunchPadVersion:
+    Type: String
+    Default: 2.2.2.0
+  Platform:
+    Type: String
+    Default: Tomcat
+  Os:
+    Type: String
+    Default: RHEL7
+
+Transform:
+  Name: 'AWS::Include'
+  Parameters:
+    Location: 's3://kemper-svc-prd-jenkins-us-east-1/cloudformation/common/vpc-mapping.yml'
 
 Resources:
-  Policy:
-    Type: AWS::IAM::Policy
+#ec2 resources
+  EC2Instanceapp0:
+    Type: AWS::EC2::Instance
     Properties:
-      PolicyName: 'policy-svc-base-t0'
-      PolicyDocument:
-        Version: '2012-10-17'
-        Statement:
-        - Effect: Allow
-          Action:
-          - ssm:DescribeAssociation
-          Resource: "*"
-        ## End of Policy Definition ##
-      Roles:
-      - Ref: InstanceRole
+      InstanceType: t3a.micro
+      InstanceInitiatedShutdownBehavior: stop
+      ImageId: !FindInMap [VPCMap, !Ref Account, linuxami]
+      UserData:
+        !Base64 |
+          #! /bin/bash -xe
+          hostnamectl set-hostname KATAE1UXJKTCD0A.lab.aws.kemperi.com
+      KeyName: !FindInMap [VPCMap, !Ref Account, keypair]
+      SubnetId: !FindInMap [VPCMap, !Ref Account, subnetone]
+      SecurityGroupIds:
+        - !FindInMap [VPCMap, !Ref Account, mgmtsecuritygroup]
+        - Fn::ImportValue: 
+            !Join ["-", ["sg", !Ref Account, !Ref Application, !Ref Environment, "ec2", "app"]]
+      BlockDeviceMappings:
+        - DeviceName: /dev/sda1
+          Ebs:
+            VolumeSize: !Ref RootVolumeSize
+            VolumeType: 'gp2'
+            DeleteOnTermination: True
+      Tags:
+        - Key: Name
+          Value: KATAE1UXJKTCD0A.lab.aws.kemperi.com
+        - Key: Account
+          Value: !Ref Account
+        - Key: Environment
+          Value: !Ref Environment
+        - Key: Role
+          Value: app
+        - Key: Application
+          Value: !Ref Application
+        - Key: ProductCode
+          Value: !Ref ProductCode
+        - Key: AppOwner
+          Value: !Ref AppOwner
+        - Key: BackupProfile
+          Value: !Ref BackupProfile
+        - Key: DataClassification
+          Value: !Ref DataClassification
+        - Key: DataSensitivity
+          Value: !Ref DataSensitivity
+        - Key: NetworkZone
+          Value: !Ref NetworkZone
+        - Key: Compliance
+          Value: !Ref Compliance
+        - Key: GroupEntity
+          Value: !Ref GroupEntity
+        - Key: LaunchPadVersion
+          Value: !Ref LaunchPadVersion
+        - Key: Platform
+          Value: !Ref Platform 
+        - Key: Os
+          Value: !Ref Os      
+  DNSARecordapp0:
+    Type: AWS::Route53::RecordSet
+    Properties:
+      HostedZoneName: !Join ['', [!Ref 'Account', ., 'aws.kemperi.com', .]]
+      Comment: DNS name for instance
+      Name: KATAE1UXJKTCD0A.lab.aws.kemperi.com
+      Type: A
+      TTL: '900'
+      ResourceRecords:
+      - !GetAtt EC2Instanceapp0.PrivateIp
 
-  InstanceRole:
-    Type: AWS::IAM::Role
+#ec2 resources
+  EC2Instanceapp1:
+    Type: AWS::EC2::Instance
     Properties:
-      RoleName: "role-svc-base-t0"
-      AssumeRolePolicyDocument:
-        Version: '2012-10-17'
-        Statement:
-        - Effect: Allow
-          Principal:
-            Service:
-            - ec2.amazonaws.com
-          Action:
-          - sts:AssumeRole
-      Path: "/"
-      ManagedPolicyArns:
-          - arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore
-          - arn:aws:iam::aws:policy/CloudWatchAgentServerPolicy
-        ## End of Managed Policies ##
-  InstanceProfile:
-    Type: AWS::IAM::InstanceProfile
+      InstanceType: t3a.micro
+      InstanceInitiatedShutdownBehavior: stop
+      ImageId: !FindInMap [VPCMap, !Ref Account, linuxami]
+      UserData:
+        !Base64 |
+          #! /bin/bash -xe
+          hostnamectl set-hostname KATAE1UXJKTCD0B.lab.aws.kemperi.com
+      KeyName: !FindInMap [VPCMap, !Ref Account, keypair]
+      SubnetId: !FindInMap [VPCMap, !Ref Account, subnetone]
+      SecurityGroupIds:
+        - !FindInMap [VPCMap, !Ref Account, mgmtsecuritygroup]
+        - Fn::ImportValue: 
+            !Join ["-", ["sg", !Ref Account, !Ref Application, !Ref Environment, "ec2", "app"]]
+      BlockDeviceMappings:
+        - DeviceName: /dev/sda1
+          Ebs:
+            VolumeSize: !Ref RootVolumeSize
+            VolumeType: 'gp2'
+            DeleteOnTermination: True
+      Tags:
+        - Key: Name
+          Value: KATAE1UXJKTCD0B.lab.aws.kemperi.com
+        - Key: Account
+          Value: !Ref Account
+        - Key: Environment
+          Value: !Ref Environment
+        - Key: Role
+          Value: app
+        - Key: Application
+          Value: !Ref Application
+        - Key: ProductCode
+          Value: !Ref ProductCode
+        - Key: AppOwner
+          Value: !Ref AppOwner
+        - Key: BackupProfile
+          Value: !Ref BackupProfile
+        - Key: DataClassification
+          Value: !Ref DataClassification
+        - Key: DataSensitivity
+          Value: !Ref DataSensitivity
+        - Key: NetworkZone
+          Value: !Ref NetworkZone
+        - Key: Compliance
+          Value: !Ref Compliance
+        - Key: GroupEntity
+          Value: !Ref GroupEntity
+        - Key: LaunchPadVersion
+          Value: !Ref LaunchPadVersion
+        - Key: Platform
+          Value: !Ref Platform 
+        - Key: Os
+          Value: !Ref Os      
+  DNSARecordapp1:
+    Type: AWS::Route53::RecordSet
     Properties:
-      Path: "/"
-      InstanceProfileName: 'profile-svc-base-t0'
-      Roles:
-        - Ref: InstanceRole
+      HostedZoneName: !Join ['', [!Ref 'Account', ., 'aws.kemperi.com', .]]
+      Comment: DNS name for instance
+      Name: KATAE1UXJKTCD0B.lab.aws.kemperi.com
+      Type: A
+      TTL: '900'
+      ResourceRecords:
+      - !GetAtt EC2Instanceapp1.PrivateIp
 
-Outputs:
-  profile:
-    Value: !Ref InstanceProfile
-    Export:
-      Name: 'role-svc-base-t0'
+#elb resources
+  ALBapp:
+    Type: AWS::ElasticLoadBalancingV2::LoadBalancer
+    Properties:
+      Name: !Join ['', [ !Ref ELBNameapp, '-ALB']]
+      Scheme: internal
+      Subnets:
+        - !FindInMap [VPCMap, !Ref Account, subnetone]
+        - !FindInMap [VPCMap, !Ref Account, subnettwo]
+      SecurityGroups:
+        - Fn::ImportValue: 
+            !Join ["-", ["sg", !Ref Account, !Ref Application, !Ref Environment, "alb", "app"]]
+      Type: application
+      Tags:
+        - Key: Name
+          Value: !Join ['', [ !Ref ELBNameapp, '-ALB']]
+        - Key: Environment
+          Value: !Ref Environment
+        - Key: Role
+          Value: !Ref Role
+        - Key: Application
+          Value: !Ref Application
+        - Key: ProductCode
+          Value: !Ref ProductCode
+        - Key: AppOwner
+          Value: !Ref AppOwner
+        - Key: BackupProfile
+          Value: !Ref BackupProfile
+        - Key: LaunchPadVersion
+          Value: !Ref LaunchPadVersion
+        - Key: Platform
+          Value: !Ref Platform
+  DNSRecordapp:
+    Type: AWS::Route53::RecordSet
+    Properties:
+      HostedZoneName: !Join ['', [!Ref 'Account', ., 'aws.kemperi.com', .]]
+      Comment: DNS name for ALB
+      Name: !Join ['', [!Ref 'ELBNameapp', ., !Ref 'Account', ., 'aws.kemperi.com']]
+      Type: CNAME
+      TTL: '900'
+      ResourceRecords:
+      - !GetAtt ALBapp.DNSName
+  Listenerapp:
+    Type: AWS::ElasticLoadBalancingV2::Listener
+    Properties:
+      DefaultActions:
+      - TargetGroupArn: !Ref 'TargetGroupapp'
+        Type: forward
+      LoadBalancerArn: !Ref 'ALBapp'
+      Port: 8080
+      Protocol: HTTP
+  TargetGroupapp:
+    Type: AWS::ElasticLoadBalancingV2::TargetGroup
+    Properties:
+      Name: !Join ['', [!Ref ELBNameapp, '-TG']]
+      Port: 8080
+      Protocol: HTTP
+      Targets:
+        - Id: !Ref EC2Instanceapp0
+        - Id: !Ref EC2Instanceapp1
+#LISTENERTARGETS
+      TargetGroupAttributes:
+        - Key: stickiness.enabled
+          Value: 'true'
+        - Key: stickiness.type
+          Value: lb_cookie
+        - Key: stickiness.lb_cookie.duration_seconds
+          Value: '180'
+      VpcId: !FindInMap [VPCMap, !Ref Account, vpcid]
+      Tags:
+      - Key: Name
+        Value: !Join ['', [!Ref ELBNameapp, '-TG']]
+      - Key: LaunchPadVersion
+        Value: !Ref LaunchPadVersion
+#REPLACE
+
+# Outputs:
+#   EC2InstanceID:
+#     Description: Instance ID
+#     Value: !Ref EC2Instance
+#   DNSEndpoint:
+#     Description: Consumable Endpoint in Route53
+#     Value: !Ref DNSARecord
+#   Endpoint:
+#     Description: The endpoint URL of the instance created
+#     Value: !GetAtt [EC2Instance, PrivateDnsName]
+#   TargetGroupARN:
+#     Value: !Ref 'TargetGroup'
