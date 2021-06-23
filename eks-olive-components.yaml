@@ -20,6 +20,9 @@ metadata:
   namespace: dev
 spec:
   replicas: 1
+  selector:
+    matchLabels:
+      app: eks-olive-components
   template:
     metadata:
       labels:
